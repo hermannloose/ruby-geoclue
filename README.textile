@@ -1,0 +1,3 @@
+h1. ruby-geoclue
+
+ruby-geoclue is going to be a wrapper for geoclue (http://www.freedesktop.org/wiki/Software/GeoClue).
