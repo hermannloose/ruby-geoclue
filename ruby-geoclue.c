@@ -19,7 +19,7 @@ void Init_geoclue()
 	rb_define_const(rb_mGeoclue, "ACCURACY_STREET", INT2FIX(GEOCLUE_ACCURACY_LEVEL_STREET));
 	rb_define_const(rb_mGeoclue, "ACCURACY_DETAILED", INT2FIX(GEOCLUE_ACCURACY_LEVEL_DETAILED));
 
-	rb_define_const(rb_mGeoclue, "STATUS_NONE", INT2FIX(GEOCLUE_STATUS_ERROR));
+	rb_define_const(rb_mGeoclue, "STATUS_ERROR", INT2FIX(GEOCLUE_STATUS_ERROR));
 	rb_define_const(rb_mGeoclue, "STATUS_UNAVAILABLE", INT2FIX(GEOCLUE_STATUS_UNAVAILABLE));
 	rb_define_const(rb_mGeoclue, "STATUS_ACQUIRING", INT2FIX(GEOCLUE_STATUS_ACQUIRING));
 	rb_define_const(rb_mGeoclue, "STATUS_AVAILABLE", INT2FIX(GEOCLUE_STATUS_AVAILABLE));
