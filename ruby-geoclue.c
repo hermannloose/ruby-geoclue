@@ -60,6 +60,13 @@ static VALUE master_client_get_position_provider(VALUE self)
 	return Qnil;
 }
 
+static VALUE position_alloc(VALUE klass)
+{
+	return Data_Wrap_Struct(rb_cGeocluePosition, NULL, NULL, geoclue_position_new(
+		"org.freedesktop.Geoclue.Providers.Hostip",
+		"/org/freedesktop/Geoclue/Providers/Hostip"));
+}
+
 static VALUE position_latitude(VALUE self)
 {
 	GeocluePosition *position;
@@ -67,6 +74,22 @@ static VALUE position_latitude(VALUE self)
 	Data_Get_Struct(self, GeocluePosition, position);
 	geoclue_position_get_position(position, NULL, &latitude, NULL, NULL, NULL, NULL);
 	return rb_float_new(latitude);
+}
+
+static VALUE provider_get_info(VALUE self)
+{
+	GeoclueProvider *provider;
+	Data_Get_Struct(self, GeoclueProvider, provider);
+	char *name, *description;
+	GError *error;
+	if (geoclue_provider_get_provider_info(provider, &name, &description, &error)) {
+		VALUE hash = rb_hash_new();
+		rb_hash_aset(hash, rb_str_new2("name"), rb_tainted_str_new2(name));
+		rb_hash_aset(hash, rb_str_new2("description"), rb_tainted_str_new2(description));
+		return hash;
+	} else {
+		return Qnil;
+	}
 }
 
 static VALUE provider_get_status(VALUE self)
@@ -117,6 +140,7 @@ void Init_geoclue()
 	rb_define_method(rb_cGeoclueMasterClient, "get_position_provider", master_client_get_position_provider, 0);
 
 	rb_cGeoclueProvider = rb_define_class_under(rb_mGeoclue, "Provider", rb_cObject);
+	rb_define_method(rb_cGeoclueProvider, "info", provider_get_info, 0);
 	rb_define_method(rb_cGeoclueProvider, "get_status", provider_get_status, 0);
 
 	// Geoclue::Provider classes
@@ -124,5 +148,6 @@ void Init_geoclue()
 	rb_cGeoclueAddress = rb_define_class_under(rb_mGeoclue, "Address", rb_cGeoclueProvider);
 
 	rb_cGeocluePosition = rb_define_class_under(rb_mGeoclue, "Position", rb_cGeoclueProvider);
+	rb_define_alloc_func(rb_cGeocluePosition, position_alloc);
 	rb_define_method(rb_cGeocluePosition, "latitude", position_latitude, 0);
 }
