@@ -29,7 +29,7 @@ static VALUE address_get_address(VALUE self)
 	GError *error;
 	if (geoclue_address_get_address(address, &timestamp, NULL, NULL, &error)) {
 		VALUE hash = rb_hash_new();
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("timestamp")), INT2FIX(timestamp));
+		rb_hash_aset(hash, ID2SYM(rb_intern("timestamp")), INT2FIX(timestamp));
 		return hash;
 	}
 }
@@ -74,9 +74,7 @@ static VALUE master_client_get_position_provider(VALUE self)
 	char *name, *description, *service, *path;
 	if (geoclue_master_client_get_position_provider(client, &name, &description, &service, &path, NULL)) {
 		// FIXME Mark and sweep functions
-		printf("Before\n");
 		geoclue_position_new(service, path);
-		printf("After\n");
 		return Data_Wrap_Struct(rb_cGeocluePosition, NULL, NULL, geoclue_position_new(service, path));
 	}
 	return Qnil;
@@ -100,13 +98,13 @@ static VALUE position_get_position(VALUE self)
 	VALUE hash = rb_hash_new();
 	rb_hash_aset(hash, rb_str_intern(rb_str_new2("timestamp")), INT2FIX(timestamp));
 	if (validity & GEOCLUE_POSITION_FIELDS_LATITUDE) {
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("latitude")), rb_float_new(latitude));
+		rb_hash_aset(hash, ID2SYM(rb_intern("latitude")), rb_float_new(latitude));
 	}
 	if (validity & GEOCLUE_POSITION_FIELDS_LONGITUDE) {
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("longitude")), rb_float_new(longitude));
+		rb_hash_aset(hash, ID2SYM(rb_intern("longitude")), rb_float_new(longitude));
 	}
 	if (validity & GEOCLUE_POSITION_FIELDS_ALTITUDE) {
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("altitude")), rb_float_new(altitude));
+		rb_hash_aset(hash, ID2SYM(rb_intern("altitude")), rb_float_new(altitude));
 	}
 	return hash;
 }
@@ -119,8 +117,8 @@ static VALUE provider_get_info(VALUE self)
 	GError *error;
 	if (geoclue_provider_get_provider_info(provider, &name, &description, &error)) {
 		VALUE hash = rb_hash_new();
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("name")), rb_tainted_str_new2(name));
-		rb_hash_aset(hash, rb_str_intern(rb_str_new2("description")), rb_tainted_str_new2(description));
+		rb_hash_aset(hash, ID2SYM(rb_intern("name")), rb_tainted_str_new2(name));
+		rb_hash_aset(hash, ID2SYM(rb_intern("description")), rb_tainted_str_new2(description));
 		return hash;
 	} else {
 		return Qnil;
