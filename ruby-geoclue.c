@@ -12,6 +12,28 @@ static VALUE rb_cGeoclueMasterClient = Qnil;
 static VALUE rb_cGeocluePosition = Qnil;
 static VALUE rb_cGeoclueProvider = Qnil;
 
+static VALUE address_alloc(VALUE klass)
+{
+	// FIXME Mark and sweep functions
+	return Data_Wrap_Struct(rb_cGeoclueAddress, NULL, NULL, geoclue_address_new(
+		"org.freedesktop.Geoclue.Providers.Hostip",
+		"/org/freedesktop/Geoclue/Providers/Hostip"
+	));
+}
+
+static VALUE address_get_address(VALUE self)
+{
+	GeoclueAddress *address;
+	Data_Get_Struct(self, GeoclueAddress, address);
+	int timestamp;
+	GError *error;
+	if (geoclue_address_get_address(address, &timestamp, NULL, NULL, &error)) {
+		VALUE hash = rb_hash_new();
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("timestamp")), INT2FIX(timestamp));
+		return hash;
+	}
+}
+
 static VALUE master_get_default()
 {
 	// FIXME Mark and sweep functions.
@@ -67,13 +89,26 @@ static VALUE position_alloc(VALUE klass)
 		"/org/freedesktop/Geoclue/Providers/Hostip"));
 }
 
-static VALUE position_latitude(VALUE self)
+static VALUE position_get_position(VALUE self)
 {
 	GeocluePosition *position;
-	double latitude;
+	int timestamp;
+	double latitude, longitude, altitude;
+	GError *error;
 	Data_Get_Struct(self, GeocluePosition, position);
-	geoclue_position_get_position(position, NULL, &latitude, NULL, NULL, NULL, NULL);
-	return rb_float_new(latitude);
+	GeocluePositionFields validity = geoclue_position_get_position(position, &timestamp, &latitude, &longitude, &altitude, NULL, &error);
+	VALUE hash = rb_hash_new();
+	rb_hash_aset(hash, rb_str_intern(rb_str_new2("timestamp")), INT2FIX(timestamp));
+	if (validity & GEOCLUE_POSITION_FIELDS_LATITUDE) {
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("latitude")), rb_float_new(latitude));
+	}
+	if (validity & GEOCLUE_POSITION_FIELDS_LONGITUDE) {
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("longitude")), rb_float_new(longitude));
+	}
+	if (validity & GEOCLUE_POSITION_FIELDS_ALTITUDE) {
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("altitude")), rb_float_new(altitude));
+	}
+	return hash;
 }
 
 static VALUE provider_get_info(VALUE self)
@@ -84,8 +119,8 @@ static VALUE provider_get_info(VALUE self)
 	GError *error;
 	if (geoclue_provider_get_provider_info(provider, &name, &description, &error)) {
 		VALUE hash = rb_hash_new();
-		rb_hash_aset(hash, rb_str_new2("name"), rb_tainted_str_new2(name));
-		rb_hash_aset(hash, rb_str_new2("description"), rb_tainted_str_new2(description));
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("name")), rb_tainted_str_new2(name));
+		rb_hash_aset(hash, rb_str_intern(rb_str_new2("description")), rb_tainted_str_new2(description));
 		return hash;
 	} else {
 		return Qnil;
@@ -141,13 +176,15 @@ void Init_geoclue()
 
 	rb_cGeoclueProvider = rb_define_class_under(rb_mGeoclue, "Provider", rb_cObject);
 	rb_define_method(rb_cGeoclueProvider, "info", provider_get_info, 0);
-	rb_define_method(rb_cGeoclueProvider, "get_status", provider_get_status, 0);
+	rb_define_method(rb_cGeoclueProvider, "status", provider_get_status, 0);
 
 	// Geoclue::Provider classes
 
 	rb_cGeoclueAddress = rb_define_class_under(rb_mGeoclue, "Address", rb_cGeoclueProvider);
+	rb_define_alloc_func(rb_cGeoclueAddress, address_alloc);
+	rb_define_method(rb_cGeoclueAddress, "address", address_get_address, 0);
 
 	rb_cGeocluePosition = rb_define_class_under(rb_mGeoclue, "Position", rb_cGeoclueProvider);
 	rb_define_alloc_func(rb_cGeocluePosition, position_alloc);
-	rb_define_method(rb_cGeocluePosition, "latitude", position_latitude, 0);
+	rb_define_method(rb_cGeocluePosition, "position", position_get_position, 0);
 }
