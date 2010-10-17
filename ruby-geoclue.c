@@ -14,12 +14,12 @@ static VALUE rb_cGeoclueMasterClient = Qnil;
 static VALUE rb_cGeocluePosition = Qnil;
 static VALUE rb_cGeoclueProvider = Qnil;
 
-static VALUE address_alloc(VALUE klass)
+static VALUE address_new(VALUE klass, VALUE service, VALUE path)
 {
 	// FIXME Mark and sweep functions
 	return Data_Wrap_Struct(rb_cGeoclueAddress, NULL, NULL, geoclue_address_new(
-		"org.freedesktop.Geoclue.Providers.Localnet",
-		"/org/freedesktop/Geoclue/Providers/Localnet"
+		StringValuePtr(service),
+		StringValuePtr(path)
 	));
 }
 
@@ -62,12 +62,12 @@ static VALUE address_get_address(VALUE self)
 	}
 }
 
-static VALUE geocode_alloc(VALUE klass)
+static VALUE geocode_new(VALUE klass, VALUE service, VALUE path)
 {
 	// FIXME Mark and sweep functions
 	return Data_Wrap_Struct(rb_cGeoclueGeocode, NULL, NULL, geoclue_geocode_new(
-		"org.freedesktop.Geoclue.Providers.Geonames",
-		"/org/freedesktop/Geoclue/Providers/Geonames"
+		StringValuePtr(service),
+		StringValuePtr(path)
 	));
 }
 
@@ -168,11 +168,11 @@ static VALUE master_client_get_position_provider(VALUE self)
 	return Qnil;
 }
 
-static VALUE position_alloc(VALUE klass)
+static VALUE position_new(VALUE klass, VALUE service, VALUE path)
 {
 	return Data_Wrap_Struct(rb_cGeocluePosition, NULL, NULL, geoclue_position_new(
-		"org.freedesktop.Geoclue.Providers.Hostip",
-		"/org/freedesktop/Geoclue/Providers/Hostip"
+		StringValuePtr(service),
+		StringValuePtr(path)
 	));
 }
 
@@ -270,14 +270,14 @@ void Init_geoclue()
 	// Geoclue::Provider classes
 
 	rb_cGeoclueAddress = rb_define_class_under(rb_mGeoclue, "Address", rb_cGeoclueProvider);
-	rb_define_alloc_func(rb_cGeoclueAddress, address_alloc);
+	rb_define_singleton_method(rb_cGeoclueAddress, "new", address_new, 2);
 	rb_define_method(rb_cGeoclueAddress, "details", address_get_address, 0);
 
 	rb_cGeoclueGeocode = rb_define_class_under(rb_mGeoclue, "Geocode", rb_cGeoclueProvider);
-	rb_define_alloc_func(rb_cGeoclueGeocode, geocode_alloc);
+	rb_define_singleton_method(rb_cGeoclueGeocode, "new", geocode_new, 2);
 	rb_define_method(rb_cGeoclueGeocode, "position", geocode_address_to_position, 1);
 
 	rb_cGeocluePosition = rb_define_class_under(rb_mGeoclue, "Position", rb_cGeoclueProvider);
-	rb_define_alloc_func(rb_cGeocluePosition, position_alloc);
+	rb_define_singleton_method(rb_cGeocluePosition, "new", position_new, 2);
 	rb_define_method(rb_cGeocluePosition, "details", position_get_position, 0);
 }
