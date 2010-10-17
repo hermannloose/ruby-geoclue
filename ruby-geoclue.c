@@ -16,8 +16,8 @@ static VALUE address_alloc(VALUE klass)
 {
 	// FIXME Mark and sweep functions
 	return Data_Wrap_Struct(rb_cGeoclueAddress, NULL, NULL, geoclue_address_new(
-		"org.freedesktop.Geoclue.Providers.Hostip",
-		"/org/freedesktop/Geoclue/Providers/Hostip"
+		"org.freedesktop.Geoclue.Providers.Localnet",
+		"/org/freedesktop/Geoclue/Providers/Localnet"
 	));
 }
 
@@ -26,10 +26,24 @@ static VALUE address_get_address(VALUE self)
 	GeoclueAddress *address;
 	Data_Get_Struct(self, GeoclueAddress, address);
 	int timestamp;
+	GHashTable *details;
+	GeoclueAccuracy *accuracy;
 	GError *error;
-	if (geoclue_address_get_address(address, &timestamp, NULL, NULL, &error)) {
+	if (geoclue_address_get_address(address, &timestamp, &details, &accuracy, &error)) {
 		VALUE hash = rb_hash_new();
 		rb_hash_aset(hash, ID2SYM(rb_intern("timestamp")), INT2FIX(timestamp));
+		char *country = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_COUNTRY);
+		if (country != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("country")), rb_tainted_str_new2(country));
+		char *region = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_REGION);
+		if (region != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("region")), rb_tainted_str_new2(region));
+		char *locality = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_LOCALITY);
+		if (locality != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("locality")), rb_tainted_str_new2(locality));
+		char *area = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_AREA);
+		if (area != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("area")), rb_tainted_str_new2(area));
+		char *postalcode = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_POSTALCODE);
+		if (postalcode != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("postalcode")), rb_tainted_str_new2(postalcode));
+		char *street = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_STREET);
+		if (street != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("street")), rb_tainted_str_new2(street));
 		return hash;
 	}
 }
@@ -180,9 +194,9 @@ void Init_geoclue()
 
 	rb_cGeoclueAddress = rb_define_class_under(rb_mGeoclue, "Address", rb_cGeoclueProvider);
 	rb_define_alloc_func(rb_cGeoclueAddress, address_alloc);
-	rb_define_method(rb_cGeoclueAddress, "address", address_get_address, 0);
+	rb_define_method(rb_cGeoclueAddress, "details", address_get_address, 0);
 
 	rb_cGeocluePosition = rb_define_class_under(rb_mGeoclue, "Position", rb_cGeoclueProvider);
 	rb_define_alloc_func(rb_cGeocluePosition, position_alloc);
-	rb_define_method(rb_cGeocluePosition, "position", position_get_position, 0);
+	rb_define_method(rb_cGeocluePosition, "details", position_get_position, 0);
 }
