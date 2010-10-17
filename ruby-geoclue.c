@@ -58,6 +58,8 @@ static VALUE address_get_address(VALUE self)
 		char *street = g_hash_table_lookup(details, GEOCLUE_ADDRESS_KEY_STREET);
 		if (street != NULL) rb_hash_aset(hash, ID2SYM(rb_intern("street")), rb_tainted_str_new2(street));
 
+		g_hash_table_destroy(details);
+
 		return hash;
 	}
 }
@@ -108,6 +110,8 @@ static VALUE geocode_address_to_position(VALUE self, VALUE details)
 
 	GeocluePositionFields validity = geoclue_geocode_address_to_position(
 		geocode, hashtable, &latitude, &longitude, &altitude, &accuracy, &error);
+
+	g_hash_table_destroy(hashtable);
 
 	if (validity & GEOCLUE_POSITION_FIELDS_LATITUDE) {
 		rb_hash_aset(hash, ID2SYM(rb_intern("latitude")), rb_float_new(latitude));
